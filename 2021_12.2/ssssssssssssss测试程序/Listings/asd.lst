@@ -1,0 +1,87 @@
+C51 COMPILER V9.60.0.0   ASD                                                               11/27/2021 19:35:45 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE ASD
+OBJECT MODULE PLACED IN .\Objects\asd.obj
+COMPILER INVOKED BY: D:\DPJJX     proteus\Keil\Keil\C51\BIN\C51.EXE asd.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PR
+                    -INT(.\Listings\asd.lst) TABS(2) OBJECT(.\Objects\asd.obj)
+
+line level    source
+
+   1          
+   2          #include <reg52.h>
+   3          
+   4          #define uchar unsigned char
+   5          #define uint  unsigned int
+   6          
+   7          uchar num;//发送暂存变量
+   8          
+   9          void delay(uint z)
+  10          {
+  11   1        uint x,y;
+  12   1        for(x = z; x > 0; x--)
+  13   1          for(y = 114; y > 0 ; y--);
+  14   1      } 
+  15          void UART_init()
+  16          {
+  17   1        TMOD = 0x20;    //T1工作模式2  8位自动重装
+  18   1        TH1 = 0xfd;
+  19   1        TL1 = 0xfd;   //比特率9600 
+  20   1        TR1 = 1;    //启动T1定时器
+  21   1        SM0 = 0;
+  22   1        SM1 = 1;    //串口工作方式1 10位异步
+  23   1        REN = 1;    //串口允许接收
+  24   1        EA  = 1;    //开总中断
+  25   1        ES  = 1;    //串口中断打开
+  26   1        
+  27   1      /*  
+  28   1          SCON = 0x50;    //8位数据,可变波特率
+  29   1        //AUXR |= 0x40;   //定时器时钟1T模式
+  30   1        //AUXR &= 0xFE;   //串口1选择定时器1为波特率发生器
+  31   1        TMOD &= 0x0F;   //设置定时器模式
+  32   1        TL1 = 0xE0;   //设置定时初始值
+  33   1        TH1 = 0xFE;   //设置定时初始值
+  34   1        ET1 = 0;    //禁止定时器%d中断
+  35   1        TR1 = 1;    //定时器1开始计时
+  36   1        */
+  37   1        
+  38   1        
+  39   1        
+  40   1        
+  41   1      }
+  42          void main()
+  43          {
+  44   1        UART_init(); //串口初始化
+  45   1        while(1); 
+  46   1      }
+  47          
+  48          
+  49          void UART() interrupt 4  //串口中断
+  50          {
+  51   1        if(RI)  //检测是否接收完成 当硬件接收一个数据时 RI 高位
+  52   1        {
+  53   2          num = SBUF;   //num 取出接收缓存器的值
+  54   2          delay(100);
+C51 COMPILER V9.60.0.0   ASD                                                               11/27/2021 19:35:45 PAGE 2   
+
+  55   2          num++;//把接收的数据加1并发送
+  56   2          RI = 0;
+  57   2          SBUF = num;   //将数据返回缓存区
+  58   2          while(!TI);
+  59   2          TI = 0;
+  60   2        }
+  61   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    110    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      1    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,10 @@
+".\Objects\STARTUP.obj",
+".\Objects\delay.obj",
+".\Objects\buzz.obj",
+".\Objects\led.obj",
+".\Objects\Key.obj",
+".\Objects\OLED.obj",
+".\Objects\AS608.obj",
+".\Objects\main.obj" 
+TO ".\Objects\124578" 
+PRINT(".\Listings\124578.m51") RAMSIZE(256) 

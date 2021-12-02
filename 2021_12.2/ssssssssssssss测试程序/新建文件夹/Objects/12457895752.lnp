@@ -1,0 +1,4 @@
+".\Objects\oled.obj",
+".\Objects\delay.obj" 
+TO ".\Objects\12457895752" 
+PRINT(".\Listings\12457895752.m51") RAMSIZE(256) 

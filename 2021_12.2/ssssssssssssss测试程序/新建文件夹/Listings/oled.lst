@@ -1,0 +1,581 @@
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE OLED
+OBJECT MODULE PLACED IN .\Objects\oled.obj
+COMPILER INVOKED BY: D:\DPJJX     proteus\Keil\Keil\C51\BIN\C51.EXE oled.c LARGE OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEX
+                    -TEND PRINT(.\Listings\oled.lst) TABS(2) OBJECT(.\Objects\oled.obj)
+
+line level    source
+
+   1          #include <intrins.h>
+   2          #include <STC89C5xRC.h>
+   3          #include <stdlib.h>
+   4          #include <string.h>
+   5          #include "font.h"
+   6          #include "delay.h"
+   7          
+   8          
+   9          
+  10          #define u8 unsigned char
+  11          #define u16 unsigned int
+  12          #define u32 unsigned long
+  13            
+  14          
+  15          
+  16          //本测试程序使用的是软件模拟SPI接口驱动
+  17          //SPI的数据引脚定义和时钟引脚定义都可以任意修改
+  18          sbit OLED_MOSI = P1^6;   //OLED屏SPI写数据引脚 P15
+  19          sbit OLED_CLK = P1^7;    //OLED屏SPI时钟引脚   P17
+  20          
+  21          #define OLED_MOSI_Clr()  OLED_MOSI = 0
+  22          #define OLED_MOSI_Set()  OLED_MOSI = 1
+  23          
+  24          #define OLED_CLK_Clr()   OLED_CLK = 0
+  25          #define OLED_CLK_Set()   OLED_CLK = 1
+  26          
+  27          //-------------spi操作函数-----------------/
+  28          void SPI_WriteByte(u8 byte);
+  29          
+  30          
+  31          //--------------OLED参数定义---------------------
+  32          #define PAGE_SIZE    8
+  33          #define XLevelL      0x00
+  34          #define XLevelH      0x10
+  35          #define YLevel       0xB0
+  36          #define Brightness   0xFF 
+  37          #define WIDTH        130
+  38          #define HEIGHT       64 
+  39          
+  40          //-------------写命令和数据定义-------------------
+  41          #define OLED_CMD     0  //写命令
+  42          #define OLED_DATA    1  //写数据 
+  43                          
+  44          //-----------------OLED端口定义----------------
+  45          sbit OLED_CS = P1^3;    //片选信号           P13
+  46          sbit OLED_DC = P1^4;   //数据/命令控制信号  P12
+  47          sbit OLED_RST = P1^5;   //复位信号          P33
+  48          
+  49          //-----------------OLED端口操作定义---------------- 
+  50          #define OLED_CS_Clr()  OLED_CS = 0
+  51          #define OLED_CS_Set()  OLED_CS = 1
+  52          
+  53          #define OLED_DC_Clr()  OLED_DC = 0
+  54          #define OLED_DC_Set()  OLED_DC = 1
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 2   
+
+  55                       
+  56          #define OLED_RST_Clr()  OLED_RST = 0
+  57          #define OLED_RST_Set()  OLED_RST = 1
+  58          
+  59          
+  60          
+  61          //spi通信协议
+  62          
+  63          /*****************************************************************************
+  64           * @name       :void SPI_WriteByte(u8 byte)
+  65           * @date       :2018-08-09 
+  66           * @function   :Write a byte of data using C51's software SPI
+  67           * @parameters :byte:Data to be written
+  68           * @retvalue   :None
+  69          ******************************************************************************/
+  70          void SPI_WriteByte(u8 byte)
+  71          { 
+  72   1        u8 i;
+  73   1        for(i=0;i<8;i++)
+  74   1        {       
+  75   2          if(byte&0x80)
+  76   2          {
+  77   3            OLED_MOSI_Set();
+  78   3          }
+  79   2          else
+  80   2          {
+  81   3            OLED_MOSI_Clr();
+  82   3          }
+  83   2          OLED_CLK_Clr();
+  84   2          OLED_CLK_Set();
+  85   2          byte<<=1;   
+  86   2        }             
+  87   1      }
+  88          //led操作
+  89          //OLED显存总共分为8页
+  90          //每页8行，一行128个像素点
+  91          //OLED的显存
+  92          //存放格式如下.
+  93          //[0]0 1 2 3 ... 127 (0~7)行     
+  94          //[1]0 1 2 3 ... 127 (8~15)行 
+  95          //[2]0 1 2 3 ... 127 (16~23)行  
+  96          //[3]0 1 2 3 ... 127 (24~31)行  
+  97          //[4]0 1 2 3 ... 127 (32~39)行  
+  98          //[5]0 1 2 3 ... 127 (40~47)行  
+  99          //[6]0 1 2 3 ... 127 (48~55)行  
+ 100          //[7]0 1 2 3 ... 127 (56~63)行         
+ 101          
+ 102          /*******************************************************************
+ 103           * @name       :void OLED_WR_Byte(unsigned dat,unsigned cmd)
+ 104           * @date       :2018-08-27
+ 105           * @function   :Write a byte of content to the OLED screen
+ 106           * @parameters :dat:Content to be written
+ 107                          cmd:0-write command
+ 108                              1-write data
+ 109           * @retvalue   :None
+ 110          ********************************************************************/
+ 111          void OLED_WR_Byte(unsigned dat,unsigned cmd)
+ 112          {
+ 113   1        if(cmd)
+ 114   1        {
+ 115   2          OLED_DC_Set();
+ 116   2        }
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 3   
+
+ 117   1        else
+ 118   1        {
+ 119   2          OLED_DC_Clr();
+ 120   2        }
+ 121   1        OLED_CS_Clr();
+ 122   1        SPI_WriteByte(dat);
+ 123   1        OLED_CS_Set();
+ 124   1      }
+ 125          
+ 126          /*******************************************************************
+ 127           * @name       :void OLED_Set_Pos(unsigned char x, unsigned char y) 
+ 128           * @date       :2018-08-27
+ 129           * @function   :Set coordinates in the OLED screen
+ 130           * @parameters :x:x coordinates
+ 131                          y:y coordinates
+ 132           * @retvalue   :None
+ 133          ********************************************************************/
+ 134          void OLED_Set_Pos(unsigned char x, unsigned char y) 
+ 135          {
+ 136   1        OLED_WR_Byte(YLevel+y,OLED_CMD);
+ 137   1        OLED_WR_Byte(((x+2&0xf0)>>4)|0x10,OLED_CMD);
+ 138   1        OLED_WR_Byte((x+2&0x0f),OLED_CMD); 
+ 139   1      }  
+ 140                  
+ 141          /*******************************************************************
+ 142           * @name       :void OLED_Clear(unsigned dat)  
+ 143           * @date       :2018-08-27
+ 144           * @function   :clear OLED screen
+ 145           * @parameters :dat:0-Display full black
+ 146                              1-Display full white
+ 147           * @retvalue   :None
+ 148          ********************************************************************/ 
+ 149          void OLED_Clear(unsigned dat)  
+ 150          { 
+ 151   1        u8 i,n,color; 
+ 152   1        if(dat)
+ 153   1        {
+ 154   2          color = 0xff;
+ 155   2        }
+ 156   1        else
+ 157   1        {
+ 158   2          color = 0;
+ 159   2        }
+ 160   1        for(i=0;i<PAGE_SIZE;i++)  
+ 161   1        {  
+ 162   2          OLED_WR_Byte(YLevel+i,OLED_CMD);    //设置页地址（0~7）
+ 163   2          OLED_WR_Byte(XLevelL,OLED_CMD);      //设置显示位置—列低地址
+ 164   2          OLED_WR_Byte(XLevelH,OLED_CMD);      //设置显示位置—列高地址   
+ 165   2          for(n=0;n<WIDTH;n++)
+ 166   2          {
+ 167   3            OLED_WR_Byte(color,OLED_DATA); 
+ 168   3          }
+ 169   2        }   //更新显示
+ 170   1      }
+ 171          
+ 172          /*******************************************************************
+ 173           * @name       :void OLED_Reset(void) 
+ 174           * @date       :2018-08-27
+ 175           * @function   :Reset OLED screen
+ 176           * @parameters :dat:0-Display full black
+ 177                              1-Display full white
+ 178           * @retvalue   :None
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 4   
+
+ 179          ********************************************************************/ 
+ 180          void OLED_Reset(void)
+ 181          {
+ 182   1        OLED_RST_Set();
+ 183   1        Delay_Ms(100);
+ 184   1        OLED_RST_Clr();
+ 185   1        Delay_Ms(100);
+ 186   1        OLED_RST_Set(); 
+ 187   1      } 
+ 188            
+ 189          /*******************************************************************
+ 190           * @name       :void OLED_Init(void)
+ 191           * @date       :2018-08-27
+ 192           * @function   :initialise OLED SH1106 control IC
+ 193           * @parameters :None
+ 194           * @retvalue   :None
+ 195          ********************************************************************/             
+ 196          void OLED_Init(void)
+ 197          {
+ 198   1        OLED_Reset();     //复位OLED
+ 199   1      
+ 200   1      /**************初始化SSD1306*****************/  
+ 201   1        OLED_WR_Byte(0xAE,OLED_CMD); /*display off*/
+ 202   1        OLED_WR_Byte(0x00,OLED_CMD); /*set lower column address*/
+ 203   1        OLED_WR_Byte(0x10,OLED_CMD); /*set higher column address*/
+ 204   1        OLED_WR_Byte(0x40,OLED_CMD); /*set display start line*/ 
+ 205   1        OLED_WR_Byte(0xB0,OLED_CMD); /*set page address*/
+ 206   1        OLED_WR_Byte(0x81,OLED_CMD); /*contract control*/ 
+ 207   1        OLED_WR_Byte(0xFF,OLED_CMD); /*128*/
+ 208   1        OLED_WR_Byte(0xA1,OLED_CMD); /*set segment remap*/ 
+ 209   1        OLED_WR_Byte(0xA6,OLED_CMD); /*normal / reverse*/
+ 210   1        OLED_WR_Byte(0xA8,OLED_CMD); /*multiplex ratio*/ 
+ 211   1        OLED_WR_Byte(0x3F,OLED_CMD); /*duty = 1/64*/
+ 212   1        OLED_WR_Byte(0xC8,OLED_CMD); /*Com scan direction*/
+ 213   1        OLED_WR_Byte(0xD3,OLED_CMD); /*set display offset*/ 
+ 214   1        OLED_WR_Byte(0x00,OLED_CMD);
+ 215   1        OLED_WR_Byte(0xD5,OLED_CMD); /*set osc division*/ 
+ 216   1        OLED_WR_Byte(0x80,OLED_CMD);
+ 217   1        OLED_WR_Byte(0xD9,OLED_CMD); /*set pre-charge period*/ 
+ 218   1        OLED_WR_Byte(0XF1,OLED_CMD);
+ 219   1        OLED_WR_Byte(0xDA,OLED_CMD); /*set COM pins*/ 
+ 220   1        OLED_WR_Byte(0x12,OLED_CMD);
+ 221   1        OLED_WR_Byte(0xDB,OLED_CMD); /*set vcomh*/ 
+ 222   1        OLED_WR_Byte(0x30,OLED_CMD);
+ 223   1        OLED_WR_Byte(0x8D,OLED_CMD); /*set charge pump disable*/ 
+ 224   1        OLED_WR_Byte(0x14,OLED_CMD);
+ 225   1        OLED_WR_Byte(0xAF,OLED_CMD); /*display ON*/
+ 226   1      }  
+ 227          
+ 228          
+ 229          
+ 230          /*******************************************************************
+ 231           * @name       :void GUI_Fill(u8 sx,u8 sy,u8 ex,u8 ey,u8 color)
+ 232           * @date       :2018-08-27 
+ 233           * @function   :fill the specified area
+ 234           * @parameters :sx:the bebinning x coordinate of the specified area
+ 235                          sy:the bebinning y coordinate of the specified area，
+ 236                             it must be set 0~7
+ 237                          ex:the ending x coordinate of the specified area
+ 238                          ey:the ending y coordinate of the specified area,
+ 239                             it must be set 0~7
+ 240                          color:the color value of the the specified area
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 5   
+
+ 241                                1-white
+ 242                                0-black
+ 243           * @retvalue   :None
+ 244          ********************************************************************/
+ 245          void GUI_Fill(u8 sx,u8 sy,u8 ex,u8 ey,u8 color)
+ 246          {   
+ 247   1        u8 i,j,dat;     
+ 248   1        u8 width=ex-sx+1;     //得到填充的宽度
+ 249   1        u8 height=ey-sy+1;    //高度
+ 250   1        if(color)
+ 251   1        {
+ 252   2          dat = 0xff;
+ 253   2        }
+ 254   1        else
+ 255   1        {
+ 256   2          dat = 0;
+ 257   2        }
+ 258   1        for(i=0;i<height;i++)
+ 259   1        {
+ 260   2          OLED_Set_Pos(sx, sy+i); 
+ 261   2          for(j=0;j<width;j++)
+ 262   2          {
+ 263   3              OLED_WR_Byte(dat,OLED_DATA);
+ 264   3          }   
+ 265   2        }
+ 266   1      }
+ 267          
+ 268          /*****************************************************************************
+ 269           * @name       :void GUI_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size,u8 mode)
+ 270           * @date       :2018-08-27 
+ 271           * @function   :Display a single English character
+ 272           * @parameters :x:the bebinning x coordinate of the Character display position
+ 273                          y:the bebinning y coordinate of the Character display position,
+ 274                            it must be set 0~7
+ 275                          chr:the ascii code of display character(0~94)
+ 276                          Char_Size:the size of display character(8,16)
+ 277                          mode:0-white background and black character
+ 278                               1-black background and white character
+ 279           * @retvalue   :None
+ 280          ******************************************************************************/ 
+ 281          void GUI_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size)
+ 282          {       
+ 283   1          unsigned char c=0,i=0,j=0;  
+ 284   1          c=chr-' ';//得到偏移后的值      
+ 285   1          if(x>WIDTH-1)
+ 286   1          {
+ 287   2            x=0;
+ 288   2            y=y+2;
+ 289   2          }
+ 290   1          if(Char_Size ==16)
+ 291   1          {
+ 292   2            for(j=0;j<2;j++)
+ 293   2            {
+ 294   3              OLED_Set_Pos(x,y+j);
+ 295   3              for(i=0;i<8;i++)
+ 296   3              {
+ 297   4                  OLED_WR_Byte(F8X16[c*16+i+j*8],OLED_DATA);
+ 298   4              }
+ 299   3            }
+ 300   2           }
+ 301   1           else 
+ 302   1           {  
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 6   
+
+ 303   2              OLED_Set_Pos(x,y);
+ 304   2              for(i=0;i<6;i++)
+ 305   2              {
+ 306   3                  OLED_WR_Byte(F6x8[c][i],OLED_DATA);
+ 307   3              }
+ 308   2          }
+ 309   1      }
+ 310          
+ 311          /*****************************************************************************
+ 312           * @name       :void GUI_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size,u8 mode)
+ 313           * @date       :2018-08-27 
+ 314           * @function   :Display English string
+ 315           * @parameters :x:the bebinning x coordinate of the English string
+ 316                          y:the bebinning y coordinate of the English string
+ 317                            it must be set 0~7
+ 318                          chr:the start address of the English string
+ 319                          Char_Size:the size of display character
+ 320                          mode:0-white background and black character
+ 321                               1-black background and white character
+ 322           * @retvalue   :None
+ 323          ******************************************************************************/       
+ 324          void GUI_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size)
+ 325          {
+ 326   1        unsigned char j=0,csize;
+ 327   1        if(Char_Size == 16)
+ 328   1        {
+ 329   2          csize = Char_Size/2;
+ 330   2        }
+ 331   1        else if(Char_Size == 8)
+ 332   1        {
+ 333   2          csize = Char_Size/2+2;
+ 334   2        }
+ 335   1        else
+ 336   1        {
+ 337   2          return;
+ 338   2        }
+ 339   1        while (chr[j]!='\0')
+ 340   1        {   
+ 341   2          GUI_ShowChar(x,y,chr[j],Char_Size);
+ 342   2          x+=csize;
+ 343   2          if(x>120)
+ 344   2          {
+ 345   3            x=0;
+ 346   3            y+=Char_Size/8;
+ 347   3          }
+ 348   2          j++;
+ 349   2        }
+ 350   1      }
+ 351          
+ 352          /*****************************************************************************
+ 353           * @name       :u32 mypow(u8 m,u8 n)
+ 354           * @date       :2018-08-27 
+ 355           * @function   :get the nth power of m (internal call)
+ 356           * @parameters :m:the multiplier
+ 357                          n:the power
+ 358           * @retvalue   :the nth power of m
+ 359          ******************************************************************************/ 
+ 360          static u32 mypow(u8 m,u8 n)
+ 361          {
+ 362   1        u32 result=1;  
+ 363   1        while(n--)result*=m;    
+ 364   1        return result;
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 7   
+
+ 365   1      }
+ 366          
+ 367          /*****************************************************************************
+ 368           * @name       :void GUI_ShowNum(u8 x,u8 y,u32 num,u8 len,u8 Size,u8 mode)
+ 369           * @date       :2018-08-27 
+ 370           * @function   :Display number
+ 371           * @parameters :x:the bebinning x coordinate of the number
+ 372                          y:the bebinning y coordinate of the number
+ 373                            it must be set 0~7
+ 374                          num:the number(0~4294967295)
+ 375                          len:the length of the display number
+ 376                          Size:the size of display number
+ 377                          mode:0-white background and black character
+ 378                               1-black background and white character
+ 379           * @retvalue   :None
+ 380          ******************************************************************************/        
+ 381          void GUI_ShowNum(u8 x,u8 y,u32 num,u8 len,u8 Size)
+ 382          {           
+ 383   1        u8 t,temp;
+ 384   1        u8 enshow=0,csize;
+ 385   1        if(Size == 16)
+ 386   1        {
+ 387   2          csize = Size/2;
+ 388   2        }
+ 389   1        else if(Size == 8)
+ 390   1        {
+ 391   2          csize = Size/2+2;
+ 392   2        }   
+ 393   1        else
+ 394   1        {
+ 395   2          return;
+ 396   2        }
+ 397   1        for(t=0;t<len;t++)
+ 398   1        {
+ 399   2          temp=(num/mypow(10,len-t-1))%10;
+ 400   2          if(enshow==0&&t<(len-1))
+ 401   2          {
+ 402   3            if(temp==0)
+ 403   3            {
+ 404   4              GUI_ShowChar(x+csize*t,y,' ',Size);
+ 405   4              continue;
+ 406   4            }
+ 407   3            else 
+ 408   3            {
+ 409   4              enshow=1; 
+ 410   4            }
+ 411   3          }
+ 412   2          GUI_ShowChar(x+csize*t,y,temp+'0',Size); 
+ 413   2        }
+ 414   1      }  
+ 415          /*****************************************************************************
+ 416           * @name       :void GUI_ShowFont16(u8 x,u8 y,u8 *s,u8 mode)
+ 417           * @date       :2018-08-27 
+ 418           * @function   :Display a single 16x16 Chinese character
+ 419           * @parameters :x:the bebinning x coordinate of the Chinese character
+ 420                          y:the bebinning y coordinate of the Chinese character
+ 421                            it must be set 0~7
+ 422                          s:the start address of the Chinese character
+ 423                          mode:0-white background and black character
+ 424                               1-black background and white character
+ 425           * @retvalue   :None
+ 426          ******************************************************************************/ 
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 8   
+
+ 427          void GUI_ShowChinese16(u8 x,u8 y,u8 *s)
+ 428          {
+ 429   1        u8 i,j,k,tmp;
+ 430   1        u16 num;
+ 431   1        num = sizeof(cfont16)/sizeof(typFNT_GB16);
+ 432   1        for(i=0;i<num;i++)
+ 433   1        {
+ 434   2          if((cfont16[i].Index[0]==*s)&&(cfont16[i].Index[1]==*(s+1)))
+ 435   2          {
+ 436   3            for(k=0;k<2;k++)
+ 437   3            {
+ 438   4              OLED_Set_Pos(x,y+k);
+ 439   4              for(j=0;j<16;j++)
+ 440   4              {
+ 441   5                tmp = cfont16[i].Msk[j+k*16];
+ 442   5                OLED_WR_Byte(tmp,OLED_DATA);
+ 443   5              }
+ 444   4            } 
+ 445   3            break;
+ 446   3          } 
+ 447   2        }
+ 448   1      }
+ 449          void GUI_ShowCHinese(u8 x,u8 y,u8 *str)
+ 450          { u8 hsize=16;
+ 451   1        while(*str!='\0')
+ 452   1        {
+ 453   2            GUI_ShowChinese16(x,y,str);
+ 454   2          x+=hsize;
+ 455   2          if(x>WIDTH-hsize)
+ 456   2          {
+ 457   3            x=0;
+ 458   3            y+=hsize/8;
+ 459   3          }
+ 460   2          str+=2;
+ 461   2        }     
+ 462   1      }
+ 463          
+ 464          
+ 465          /*****************************************************************************
+ 466           * @name       :void GUI_DrawBMP(u8 x,u8 y,u8 width, u8 height, u8 BMP[], u8 mode)
+ 467           * @date       :2018-08-27 
+ 468           * @function   :Display a BMP monochromatic picture
+ 469           * @parameters :x:the bebinning x coordinate of the BMP monochromatic picture
+ 470                          y:the bebinning y coordinate of the BMP monochromatic picture
+ 471                            it must be set 0~7
+ 472                          width:the width of BMP monochromatic picture
+ 473                          height:the height of BMP monochromatic picture
+ 474                          BMP:the start address of BMP monochromatic picture array
+ 475                          mode:0-white background and black character
+ 476                               1-black background and white character               
+ 477           * @retvalue   :None
+ 478          ******************************************************************************/ 
+ 479          void GUI_DrawBMP(u8 x,u8 y,u8 width, u8 height, u8 BMP[], u8 mode)
+ 480          {   
+ 481   1       u8 i,j;
+ 482   1       u8 tmp;
+ 483   1       for(i=0;i<(height+7)/8;i++)
+ 484   1       {
+ 485   2          OLED_Set_Pos(x,y+i);
+ 486   2          for(j=0;j<width;j++)
+ 487   2          {
+ 488   3              if(mode)
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 9   
+
+ 489   3              {
+ 490   4                tmp = BMP[i*width+j];
+ 491   4                Delay_Ms(10);
+ 492   4              }
+ 493   3              else
+ 494   3              {
+ 495   4                tmp = ~(BMP[i*width+j]);
+ 496   4              }
+ 497   3              OLED_WR_Byte(tmp,OLED_DATA);
+ 498   3          }
+ 499   2       } 
+ 500   1      }
+ 501          
+ 502          
+ 503          void kaiss(u8 x,u8 y)
+ 504          {
+ 505   1        u8 i,j,k;
+ 506   1        u8 a=0;
+ 507   1        u8 tmp;
+ 508   1       for(i=0;i<11;i++)
+ 509   1       {
+ 510   2         for(k=0;k<2;k++)
+ 511   2         {
+ 512   3           OLED_Set_Pos(x,y+k);
+ 513   3            for(j=0;j<12;j++)
+ 514   3            {
+ 515   4                tmp = kais[a+j+12*k];
+ 516   4              OLED_WR_Byte(tmp,OLED_DATA);
+ 517   4            }
+ 518   3            
+ 519   3         } a=24*i;x =i*12;
+ 520   2       }
+ 521   1      }
+ 522          
+ 523          
+ 524          
+ 525          int main(void)
+ 526          { 
+ 527   1        OLED_Init();               //初始化OLED  
+ 528   1        OLED_Clear(0);             //清屏（全黑）
+ 529   1        
+ 530   1        while(1) 
+ 531   1        { 
+ 532   2        
+ 533   2        GUI_ShowCHinese(0,5,"在保存次败");
+ 534   2        //GUI_ShowCHinese(0,0,"指纹考勤系统库始");
+ 535   2        //GUI_ShowCHinese(0,2,"请录成再空删输开");
+ 536   2          //GUI_ShowCHinese(0,4,"入功清失正");
+ 537   2          GUI_ShowCHinese(90,5,"功清");
+ 538   2        }
+ 539   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1844    ----
+   CONSTANT SIZE    =   3654    ----
+   XDATA SIZE       =   ----      69
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+C51 COMPILER V9.60.0.0   OLED                                                              11/24/2021 21:18:09 PAGE 10  
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

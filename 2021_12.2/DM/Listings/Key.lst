@@ -1,0 +1,56 @@
+C51 COMPILER V9.60.0.0   KEY                                                               12/02/2021 20:42:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE KEY
+OBJECT MODULE PLACED IN .\Objects\Key.obj
+COMPILER INVOKED BY: D:\DPJJX     proteus\Keil\Keil\C51\BIN\C51.EXE Key.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\DM) DEBUG O
+                    -BJECTEXTEND PRINT(.\Listings\Key.lst) TABS(2) OBJECT(.\Objects\Key.obj)
+
+line level    source
+
+   1          #include "stc89c52.h"
+   2          #include "key.h"
+   3          #include "delay.h"
+   4          #include "led.h"
+   5          
+   6          //按键处理函数
+   7          //返回按键值
+   8          //mode:0,不支持连续按;1,支持连续按;
+   9          //0，没有任何按键按下
+  10          //1，KEY_sw2_up按下//加一键->向上选择*****2
+  11          //2，KEY_sw3_down按下//减一键->向下选择****3
+  12          //3，KEY_sw4_ok按下//确认键*****4
+  13          //4，KEY_sw5_back按下//返回键****5
+  14          //注意此函数有响应优先级,KEY2>KEY3>KEY4>KEY5
+  15          uchar key_num;
+  16          uchar KEY_Scan(uchar mode)
+  17          {  
+  18   1        static uchar key_up=1;//按键按松开标志
+  19   1        if(mode)key_up=1;  //支持连按     
+  20   1        if(key_up&&(KEY_sw2_up==0||KEY_sw3_down==0||KEY_sw4_ok==0||KEY_sw5_back==0))
+  21   1        {
+  22   2          Led_A2_Off();
+  23   2          Delay_Ms(50);//去抖动 
+  24   2          key_up=0;
+  25   2          if(KEY_sw2_up==0)return key_num=2;
+  26   2          else if(KEY_sw3_down==0)return key_num=3;
+  27   2          else if(KEY_sw4_ok==0)return key_num=4;
+  28   2          else if(KEY_sw5_back==0)return key_num=5;
+  29   2          Led_Init();
+  30   2        }else if(KEY_sw2_up==1&&KEY_sw3_down==1&&KEY_sw4_ok==1&&KEY_sw5_back==1)key_up=1;       
+  31   1        return 0;// 无按键按下
+  32   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     94    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

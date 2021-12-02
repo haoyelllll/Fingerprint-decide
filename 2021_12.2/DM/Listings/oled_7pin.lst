@@ -1,0 +1,24 @@
+C51 COMPILER V9.60.0.0   OLED_7PIN                                                         10/31/2021 00:19:40 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE OLED_7PIN
+OBJECT MODULE PLACED IN .\Objects\oled_7pin.obj
+COMPILER INVOKED BY: D:\DPJJX     proteus\Keil\Keil\C51\BIN\C51.EXE oled_7pin.c OPTIMIZE(8,SPEED) BROWSE INCDIR(..\DM) D
+                    -EBUG OBJECTEXTEND PRINT(.\Listings\oled_7pin.lst) TABS(2) OBJECT(.\Objects\oled_7pin.obj)
+
+line level    source
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   ----    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

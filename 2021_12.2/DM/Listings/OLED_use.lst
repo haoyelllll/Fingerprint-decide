@@ -1,0 +1,219 @@
+C51 COMPILER V9.60.0.0   OLED_USE                                                          11/01/2021 00:04:38 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE OLED_USE
+OBJECT MODULE PLACED IN .\Objects\OLED_use.obj
+COMPILER INVOKED BY: D:\DPJJX     proteus\Keil\Keil\C51\BIN\C51.EXE OLED_use.c COMPACT OPTIMIZE(8,SPEED) BROWSE INCDIR(.
+                    -.\DM) DEBUG OBJECTEXTEND PRINT(.\Listings\OLED_use.lst) TABS(2) OBJECT(.\Objects\OLED_use.obj)
+
+line level    source
+
+   1          #include "main.h"
+   2          
+   3          
+   4          void LCD_WrDat(unsigned char dat)
+   5          {
+   6   1        unsigned char i=8;
+   7   1        //LCD_CS=0;;
+   8   1        LCD_DC=1;;
+   9   1        LCD_SCL=0;;
+  10   1        //;;    
+  11   1        while(i--)
+  12   1        {
+  13   2          if(dat&0x80){LCD_SDA=1;}
+  14   2          else{LCD_SDA=0;}
+  15   2          LCD_SCL=1; 
+  16   2          //;;;
+  17   2          //;;            
+  18   2          LCD_SCL=0;;    
+  19   2          dat<<=1;    
+  20   2        }
+  21   1        //LCD_CS=1;
+  22   1      }
+  23          void LCD_WrCmd(unsigned char cmd)
+  24          {
+  25   1        unsigned char i=8;
+  26   1        
+  27   1        //LCD_CS=0;;
+  28   1        LCD_DC=0;;
+  29   1        LCD_SCL=0;;
+  30   1        //;;   
+  31   1        while(i--)
+  32   1        {
+  33   2          if(cmd&0x80){LCD_SDA=1;}
+  34   2          else{LCD_SDA=0;;}
+  35   2          LCD_SCL=1;;
+  36   2          ;;;
+  37   2          //;;             
+  38   2          LCD_SCL=0;;    
+  39   2          cmd<<=1;;   
+  40   2        }   
+  41   1        //LCD_CS=1;
+  42   1      }
+  43          void LCD_Set_Pos(unsigned char x, unsigned char y)
+  44          { 
+  45   1        LCD_WrCmd(0xb0+y);
+  46   1        LCD_WrCmd(((x&0xf0)>>4)|0x10);
+  47   1        LCD_WrCmd((x&0x0f)|0x00); 
+  48   1      } 
+  49          void LCD_Fill(unsigned char bmp_dat)
+  50          {
+  51   1        unsigned char y,x;
+  52   1        
+  53   1        for(y=0;y<8;y++)
+  54   1        {
+C51 COMPILER V9.60.0.0   OLED_USE                                                          11/01/2021 00:04:38 PAGE 2   
+
+  55   2          LCD_WrCmd(0xb0+y);
+  56   2          LCD_WrCmd(0x01);
+  57   2          LCD_WrCmd(0x10);
+  58   2          for(x=0;x<X_WIDTH;x++)
+  59   2            LCD_WrDat(bmp_dat);
+  60   2        }
+  61   1      }
+  62          void LCD_CLS(void)
+  63          {
+  64   1        unsigned char y,x;  
+  65   1        for(y=0;y<8;y++)
+  66   1        {
+  67   2          LCD_WrCmd(0xb0+y);
+  68   2          LCD_WrCmd(0x01);
+  69   2          LCD_WrCmd(0x10); 
+  70   2          for(x=0;x<X_WIDTH;x++)
+  71   2            LCD_WrDat(0);
+  72   2        }
+  73   1      }
+  74          void LCD_DLY_ms(unsigned int ms)
+  75          {                         
+  76   1        unsigned int a;
+  77   1        while(ms)
+  78   1        {
+  79   2          a=1335;
+  80   2          while(a--);
+  81   2          ms--;
+  82   2        }
+  83   1        return;
+  84   1      } 
+  85          void LCD_Init(void)        
+  86          {  
+  87   1        LCD_SCL=1;
+  88   1        //LCD_CS=1; //预制SLK和SS为高电平   
+  89   1        LCD_RST=0;
+  90   1        LCD_DLY_ms(50);
+  91   1        LCD_RST=1;
+  92   1        
+  93   1        //从上电到下面开始初始化要有足够的时间，即等待RC复位完毕   
+  94   1        
+  95   1        LCD_WrCmd(0xae);//--turn off oled panel
+  96   1        LCD_WrCmd(0x00);//---set low column address
+  97   1        LCD_WrCmd(0x10);//---set high column address
+  98   1        LCD_WrCmd(0x40);//--set start line address  Set Mapping RAM Display Start Line (0x00~0x3F)
+  99   1        LCD_WrCmd(0x81);//--set contrast control register
+ 100   1        LCD_WrCmd(0xcf); // Set SEG Output Current Brightness
+ 101   1        LCD_WrCmd(0xa1);//--Set SEG/Column Mapping     0xa0左右反置 0xa1正常
+ 102   1        LCD_WrCmd(0xc8);//Set COM/Row Scan Direction   0xc0上下反置 0xc8正常
+ 103   1        LCD_WrCmd(0xa6);//--set normal display
+ 104   1        LCD_WrCmd(0xa8);//--set multiplex ratio(1 to 64)
+ 105   1        LCD_WrCmd(0x3f);//--1/64 duty
+ 106   1        LCD_WrCmd(0xd3);//-set display offset Shift Mapping RAM Counter (0x00~0x3F)
+ 107   1        LCD_WrCmd(0x00);//-not offset
+ 108   1        LCD_WrCmd(0xd5);//--set display clock divide ratio/oscillator frequency
+ 109   1        LCD_WrCmd(0x80);//--set divide ratio, Set Clock as 100 Frames/Sec
+ 110   1        LCD_WrCmd(0xd9);//--set pre-charge period
+ 111   1        LCD_WrCmd(0xf1);//Set Pre-Charge as 15 Clocks & Discharge as 1 Clock
+ 112   1        LCD_WrCmd(0xda);//--set com pins hardware configuration
+ 113   1        LCD_WrCmd(0x12);
+ 114   1        LCD_WrCmd(0xdb);//--set vcomh
+ 115   1        LCD_WrCmd(0x40);//Set VCOM Deselect Level
+ 116   1        LCD_WrCmd(0x20);//-Set Page Addressing Mode (0x00/0x01/0x02)
+C51 COMPILER V9.60.0.0   OLED_USE                                                          11/01/2021 00:04:38 PAGE 3   
+
+ 117   1        LCD_WrCmd(0x02);//
+ 118   1        LCD_WrCmd(0x8d);//--set Charge Pump enable/disable
+ 119   1        LCD_WrCmd(0x14);//--set(0x10) disable
+ 120   1        LCD_WrCmd(0xa4);// Disable Entire Display On (0xa4/0xa5)
+ 121   1        LCD_WrCmd(0xa6);// Disable Inverse Display On (0xa6/a7) 
+ 122   1        LCD_WrCmd(0xaf);//--turn on oled panel
+ 123   1        LCD_Fill(0x00);  //初始清屏
+ 124   1        LCD_Set_Pos(0,0);   
+ 125   1      } 
+ 126          
+ 127          //==============================================================
+ 128          //函数名：LCD_P6x8Str(unsigned char x,unsigned char y,unsigned char *p)
+ 129          //功能描述：写入一组标准ASCII字符串
+ 130          //参数：显示的位置（x,y），y为页范围0～7，要显示的字符串
+ 131          //返回：无
+ 132          //==============================================================  
+ 133          void LCD_P6x8Str(unsigned char x,unsigned char y,unsigned char ch[])
+ 134          {
+ 135   1        unsigned char c=0,i=0,j=0;      
+ 136   1        while (ch[j]!='\0')
+ 137   1        {    
+ 138   2          c =ch[j]-32;
+ 139   2          if(x>126){x=0;y++;}
+ 140   2          LCD_Set_Pos(x,y);    
+ 141   2          for(i=0;i<6;i++)     
+ 142   2            LCD_WrDat(F6x8[c][i]);  
+ 143   2          x+=6;
+ 144   2          j++;
+ 145   2        }
+ 146   1      }
+ 147          //==============================================================
+ 148          //函数名：LCD_P8x16Str(unsigned char x,unsigned char y,unsigned char *p)
+ 149          //功能描述：写入一组标准ASCII字符串
+ 150          //参数：显示的位置（x,y），y为页范围0～7，要显示的字符串
+ 151          //返回：无
+ 152          //============================================================== 
+ 153          void LCD_P8x16Str(unsigned char x,unsigned char y,unsigned char ch[])
+ 154          {
+ 155   1        unsigned char c=0,i=0,j=0;
+ 156   1              
+ 157   1        while (ch[j]!='\0')
+ 158   1        {    
+ 159   2          c =ch[j]-32;
+ 160   2          if(x>120){x=0;y++;}
+ 161   2          LCD_Set_Pos(x,y);    
+ 162   2          for(i=0;i<8;i++)     
+ 163   2            LCD_WrDat(F8X16[c*16+i]);
+ 164   2          LCD_Set_Pos(x,y+1);    
+ 165   2          for(i=0;i<8;i++)     
+ 166   2            LCD_WrDat(F8X16[c*16+i+8]);  
+ 167   2          x+=8;
+ 168   2          j++;
+ 169   2        }
+ 170   1      }
+ 171          
+ 172          //输出汉字字符串
+ 173          void LCD_P14x16Ch(unsigned char x,unsigned char y,unsigned char N)
+ 174          {
+ 175   1        unsigned char wm=0,ii = 0;
+ 176   1        unsigned int adder=28*N;      
+ 177   1          LCD_Set_Pos(x , y);
+ 178   1          for(wm = 0;wm < 14;wm++)               
+C51 COMPILER V9.60.0.0   OLED_USE                                                          11/01/2021 00:04:38 PAGE 4   
+
+ 179   1          {
+ 180   2            LCD_WrDat(F14x16[adder]); 
+ 181   2            adder += 1;
+ 182   2          }      
+ 183   1          LCD_Set_Pos(x,y + 1); 
+ 184   1          for(wm = 0;wm < 14;wm++)          
+ 185   1          {
+ 186   2            LCD_WrDat(F14x16[adder]);
+ 187   2            adder += 1;
+ 188   2          }       
+ 189   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    800    ----
+   CONSTANT SIZE    =   2072    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =    112      16
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
